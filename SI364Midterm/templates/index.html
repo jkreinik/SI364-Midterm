@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<h1>{% if num_recipe %}{{ num_recipe }}{% else %}0{% endif %} possible tweets saved. </h1>
+<form action="http://localhost:5000/recipe"method="POST">
+	{{ form.hidden_tag() }}
+	{{ form.text.label }} {{ form.text() }}
+	{{ form.username.label }} {{ form.username() }}
+    {{ form.display_name.label }} {{ form.display_name() }}
+	{{ form.submit() }}
+</form>
+{% endblock %}
+
+
