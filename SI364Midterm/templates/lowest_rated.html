@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<h2>Below is a list of all of the lowest rated recipes</h2>
+<br><br>
+<ul>
+{% for x in low_star_lst %}
+    <li><strong>Recipe Title: </strong>{{ x[0] }}<br>
+    	<strong>Rating (0-5): </strong>{{ x[2] }}<br>
+    	<i>Reviewed by: </i> <strong>@{{ x[1] }}</strong></li><br><br>
+{% endfor %}
+</ul>
+{% endblock %}

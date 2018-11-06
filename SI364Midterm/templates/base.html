@@ -5,6 +5,17 @@
 
 
 <p>------------</p>
+
+<div>
+{% for message in get_flashed_messages() %}
+    <strong>{{ message }}</strong>
+{% endfor %}
+</div>
+<div>
  <ul>
-    <li><a href="{{ url_for('index') }}">User Entry</a></li> 
+    <li><a href="{{ url_for('index') }}">User Entry</a></li>
+    <li><a href="{{ url_for('review_results') }}">All Reviews</a></li>
+    <li><a href="{{ url_for('five_stars') }}">Five Star Reviews</a></li>  
+    <li><a href="{{ url_for('lowest_rated') }}">Lowest Rated Recipes</a></li>  
 </ul>
+</div>

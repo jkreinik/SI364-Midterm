@@ -20,7 +20,7 @@ app.debug = True
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'hard to guess string from si364'
 
-app.config["SQLALCHEMY_DATABASE_URI"] = "postgres://jacobkreinik@localhost/jkreinik-midterm"
+app.config["SQLALCHEMY_DATABASE_URI"] = "postgres://jacobkreinik@localhost/si364midterm"
 ## Provided:
 app.config['SQLALCHEMY_COMMIT_ON_TEARDOWN'] = True
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -39,16 +39,14 @@ def get_or_create_user(username, display_name):
         user = User(username=username, display_name=display_name)
         db.session.add(user)
         db.session.commit()
-        return user_check
+        return user
     else: 
-        return user_test
+        return user_check
 
 def get_or_create_recipe(user, title, ingredients):
-    user_check = Recipes.query.filter_by(user_id=user.id).first()
-    title_chec = Reviews.query.filter_by(title=title).first()
+    recipe_check = Recipes.query.filter_by(user_id=user.id, title=title).first()
 
-    if (user_check & recipe_check):
-        recipe = Recipes(title=title, user_id=user.id, ingredients=ingredients).first()
+    if recipe_check:
         flash('This Recipe has already been entered... use a different search term')
         return redirect(url_for('index'))
     else: 
@@ -56,26 +54,20 @@ def get_or_create_recipe(user, title, ingredients):
         db.session.add(recipe)
         db.session.commit()
         flash('The Recipe has been successfully added!')
-        return recipe.first()
+        return recipe
     
+def get_or_create_review(username, recipe_name, rating):
+    rating_check = Reviews.query.filter_by(username=username, recipe_name=recipe_name).first()
 
-# def get_or_create_review(user, recipe, rating):
-#     user_check = (Reviews.query.filter_by(user_id=user.id).first() 
-#     recipe_check = (Reviews.query.filter_by(recipe_id=recipe.id).first() 
-
-#     if (user_check & recipe_check):
-#         review = Review(rating=rating, user_id=user.id, recipe_id=recipe.id).first()
-#         return review
-#     else: 
-#         review = Review(rating=rating, user_id=user.id, recipe_id=recipe.id)
-#         db.session.add(review)
-#         db.session.commit()
-#         return review.first()
-
-
-
-
-
+    if rating_check:
+        flash('This user has already reviewed this recipe... choose a diferent recipe to review')
+        return redirect(url_for('index'))
+    else: 
+        review = Reviews(recipe_name=recipe_name, username=username, rating=rating)
+        db.session.add(review)
+        db.session.commit()
+        flash('The Recipe has been successfully reviewed!')
+        return review
 
 
 
@@ -88,12 +80,10 @@ class User(db.Model):
     id = db.Column(db.Integer,primary_key=True)
     username = db.Column(db.String(64), unique = True)
     display_name = db.Column(db.String(64))
-    review = db.relationship('Reviews', backref='users')
     recipes = db.relationship('Recipes', backref='users')
 
     def __repr__(self):
         return "{} (ID: {})".format(self.username, self.id)
-
 
 
 class Recipes(db.Model):
@@ -111,13 +101,8 @@ class Reviews(db.Model):
     __tablename__ = "reviews"
     id = db.Column(db.Integer,primary_key=True)
     rating = db.Column(db.Integer)
-    user_id = db.Column(db.Integer,db.ForeignKey('users.id'))
-    recipe_id = db.Column(db.Integer,db.ForeignKey('recipes.id'))
-
-
-    def __repr__(self):
-        return "Rating:{} (ID: {})".format(self.rating, self.id)
-
+    recipe_name = db.Column(db.String())
+    username = db.Column(db.String())
 
 
 ###################
@@ -202,6 +187,7 @@ def page_not_found(e):
 @app.route('/', methods=['GET', 'POST'])
 def index():
     form = NameForm() 
+    form2 = ReviewForm()
     num_recipes = Recipes.query.count()
 
     if form.validate_on_submit():
@@ -215,61 +201,70 @@ def index():
         recipe_data = get_recipe_data(api)
         ingredients = get_all_ingr_str(recipe_data)
         title = get_recipte_title(recipe_data)
-
+        print(user)
         get_or_create_recipe(user, title, ingredients)
 
         errors = [v for v in form.errors.values()]
         if len(errors) > 0:
             flash("!!!! ERRORS IN FORM SUBMISSION - " + str(errors))
-        return render_template('index.html',form =form, num_recipe = num_recipes)
 
-# @app.route('/recipe', methods=['GET', 'POST'])
-# def recipe():
-#     form = NameForm(request.form)
-#     if request.method == "POST" and form.validate_on_submit():
-#         text = form.text.data 
-#         username = form.username.data 
-#         display_name = form.display_name.data
+        errors2 = [v for v in form2.errors.values()]
+        if len(errors) > 0:
+            flash("!!!! ERRORS IN FORM SUBMISSION - " + str(errors))
 
-#         user = get_or_create_user(username,display_name)
+    user_recipe_data = []
+    for x in Recipes.query.all():
+        recipe_title = x.title
+        recipe_ingredients = x.ingredients
+        user_info = User.query.filter_by(id=x.user_id).first()
+        user_recipe_data.append((recipe_title,recipe_ingredients,user_info))
 
-#         api = recipe_api_call(text)
-#         recipe_data = get_recipe_data(api)
-#         ingredients = get_all_ingr_str(recipe_data)
-#         title = get_recipte_title(recipe_data)
-
-#         recipe = get_or_create_recipe(user, title, ingredients)
-
-#         errors = [v for v in form.errors.values()]
-#         if len(errors) > 0:
-#             flash("!!!! ERRORS IN FORM SUBMISSION - " + str(errors))
-#         return render_template('recipe.html' num_tweets = num_tweets)
+    return render_template('index.html',form =form,form2=form2, num_recipe = num_recipes, user_recipe = user_recipe_data)
 
 
 
+@app.route('/review_results', methods=['GET', 'POST'])
+def review_results():
+    if request.args:
+        username = request.args.get('username')
+        recipe_name = request.args.get('recipe')
+        rating_num = request.args.get('rating')
+
+        get_or_create_review(username,recipe_name, rating_num)
+
+    review_data = []
+    for x in Reviews.query.all():
+        username_db = x.username
+        recipe_name_db = x.recipe_name
+        rating_db = x.rating
+        review_data.append((recipe_name_db,rating_db,username_db))
+
+    return render_template('reviews.html', review_data=review_data)
+        
+
+@app.route('/five_stars', methods=['GET', 'POST'])
+def five_stars():
+    five_star_lst = []
+    five_star_reviews = Reviews.query.filter_by(rating=5).all()
+    for x in five_star_reviews:
+        recipe_name = x.recipe_name
+        username = x.username
+        five_star_lst.append((recipe_name, username))
+
+    return render_template('five_stars.html', five_star_lst=five_star_lst)
 
 
+@app.route('/lowest_rated', methods=['GET', 'POST'])
+def lowest_rated():
+    low_star_lst = []
+    low_reviews = Reviews.query.filter(Reviews.rating.in_([0,1])).all()
+    for x in low_reviews:
+        recipe_name = x.recipe_name
+        username = x.username
+        rating = x.rating
+        low_star_lst.append((recipe_name, username, rating))
 
-
-
-
-# @app.route('/', methods=['GET', 'POST'])
-# def index():
-#     form = NameForm() # User should be able to enter name after name and each one will be saved, even if it's a duplicate! Sends data with GET
-#     # if form.validate_on_submit():
-#     #     name = form.name.data
-#     #     newname = Name(name)
-#     #     db.session.add(newname)
-#     #     db.session.commit()
-#         #return redirect(url_for('base'))
-# return render_template('index.html',form=form)
-
-# @app.route('/names')
-# def all_names():
-#     names = Name.query.all()
-#     return render_template('name_example.html',names=names)
-
-
+    return render_template('lowest_rated.html', low_star_lst=low_star_lst)
 
 
 ## Code to run the application...

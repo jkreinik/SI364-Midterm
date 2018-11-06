@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<h2>Below is a list of all of the 5 star ratings</h2>
+<br><br>
+<ul>
+{% for x in five_star_lst %}
+    <li><strong>Recipe Title: </strong>{{ x[0] }}<br>
+    	<i>Reviewed by: </i> <strong>@{{ x[1] }}</strong></li><br><br>
+{% endfor %}
+</ul>
+{% endblock %}

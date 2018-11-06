@@ -1,14 +1,35 @@
 {% extends 'base.html' %}
 {% block content %}
-
-<h1>{% if num_recipe %}{{ num_recipe }}{% else %}0{% endif %} possible tweets saved. </h1>
-<form action="http://localhost:5000/recipe"method="POST">
+<div>
+<h1>{% if num_recipe %}{{ num_recipe }}{% else %}0{% endif %} possible recipes saved. </h1>
+</div>
+<div>
+<form method="POST">
 	{{ form.hidden_tag() }}
 	{{ form.text.label }} {{ form.text() }}
 	{{ form.username.label }} {{ form.username() }}
     {{ form.display_name.label }} {{ form.display_name() }}
 	{{ form.submit() }}
 </form>
+</div>
+
+<div>
+<ul>
+{% for x in user_recipe %}
+    <li><strong>Recipe Title: </strong>{{ x[0] }}<br>
+    	<strong>Ingredients: </strong>{{x[1]}}<br>
+    	<i>posted by: </i> <strong>@{{ x[2].username }}</strong></li><br><br>
+{% endfor %}
+</ul>
+</div>
+
+<form method="GET" action="http://localhost:5000/review_results">
+        {{ form.hidden_tag() }}
+        <p>{{ form2.username.label }}{{ form2.username() }}</p> 
+        <p>{{ form2.recipe.label }}{{ form2.recipe() }}</p>
+        <p>{{ form2.rating.label }}{{ form2.rating() }}</p>
+        {{ form.submit() }}
+    </form>
 {% endblock %}
 
 

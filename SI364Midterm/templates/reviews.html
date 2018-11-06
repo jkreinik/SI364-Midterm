@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<ul>
+{% for x in review_data %}
+    <li><strong>Recipe Title: </strong>{{ x[0] }}<br>
+    	<strong>Rating (0-5): </strong>{{x[1]}}<br>
+    	<i>Reviewed by: </i> <strong>@{{ x[2] }}</strong></li><br><br>
+{% endfor %}
+</ul>
+{% endblock %}
